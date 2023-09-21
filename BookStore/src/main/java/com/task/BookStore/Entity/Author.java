@@ -1,21 +1,29 @@
 package com.task.BookStore.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 public class Author {
-    @Id@GeneratedValue(strategy = GenerationType.SEQUENCE) private Long id;
+    @Id@GeneratedValue(strategy = GenerationType.SEQUENCE) private Long authorId;
     private String authorName;
 
-    public Long getId() {
-        return id;
+    @OneToMany(mappedBy="author")
+    private List<Book> bookList;
+
+    public List<Book> getBookList() {
+        return bookList;
+    }
+    public void setBookList(List<Book> bookList) {
+        this.bookList = bookList;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Long getId() {
+        return authorId;
+    }
+
+    public void setId(Long authorId) {
+        this.authorId = authorId;
     }
 
     public String getAuthorName() {
