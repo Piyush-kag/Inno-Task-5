@@ -1,5 +1,6 @@
 package com.task.BookStore.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -10,6 +11,7 @@ public class Book {
     private String bookName;
 
     @ManyToOne
+    @JsonIgnore
     private Author author;
 
     public Author getAuthor() {
