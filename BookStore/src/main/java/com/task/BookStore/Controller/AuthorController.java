@@ -80,12 +80,10 @@ public class AuthorController {
         this.bookRepository = bookRepository;
     }
 
-    @GetMapping("/{id}/b")
-    public List<Book> getBookById(@PathVariable Long id)
+    @GetMapping("/books")
+    public List<Book> getBookById()
     {
-        Optional<Author> findBookByAuthor = authorRepository.findById(id);
-        Author author=findBookByAuthor.get();
-        return author.getBookList();
+       return bookRepository.findAll();
     }
 
     //book
@@ -116,8 +114,7 @@ public class AuthorController {
         if (authorOptional.isPresent()) {
             Author author = authorOptional.get();
             book.setAuthor(author);
-            author.getBookList().add(book);
-            authorRepository.save(author);
+            bookRepository.save(book);
             return ResponseEntity.ok("Book saved for author with ID " + id);
         } else {
             return ResponseEntity.notFound().build();
