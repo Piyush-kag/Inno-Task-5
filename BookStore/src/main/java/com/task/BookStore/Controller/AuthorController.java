@@ -3,11 +3,11 @@ import com.task.BookStore.Entity.Author;
 import com.task.BookStore.Entity.Book;
 import com.task.BookStore.Repository.AuthorRepository;
 import com.task.BookStore.Repository.BookRepository;
-import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,7 +81,7 @@ public class AuthorController {
     }
 
     @GetMapping("/{id}/b")
-    public List<Book> getBook(@PathVariable Long id)
+    public List<Book> getBookById(@PathVariable Long id)
     {
         Optional<Author> findBookByAuthor = authorRepository.findById(id);
         Author author=findBookByAuthor.get();
@@ -89,7 +89,7 @@ public class AuthorController {
     }
 
     //book
-    @DeleteMapping("/author/db{id}")
+    @DeleteMapping("/db/{id}")
     public String deleteBookById(@PathVariable Long id ){
         Optional<Book> bookOptional = bookRepository.findById(id);
         try {
@@ -109,29 +109,63 @@ public class AuthorController {
     }
 
     //Book
-    @PostMapping("/sb")
-    public Book save(@RequestBody Book book){
-        return bookRepository.save(book);
+    @PostMapping("/{id}/saveBook")
+    public ResponseEntity<Object> save(@PathVariable Long id, @RequestBody Book book) {
+        Optional<Author> authorOptional = authorRepository.findById(id);
+
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
+            book.setAuthor(author);
+            author.getBookList().add(book);
+            authorRepository.save(author);
+            return ResponseEntity.ok("Book saved for author with ID " + id);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @GetMapping("/book{id}")
-    public Book getBookById(@PathVariable Long id) {
-        Optional<Book> book = bookRepository.findById(id);
-        return book.get();
+    @GetMapping("/{id}/books")
+    public List<Book> getBookList(@PathVariable Long id)
+    {
+        Optional<Author> authorOptional = authorRepository.findById(id);
+
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
+            List<Book> books = author.getBookList();
+            return books;
+        } else {
+            return new ArrayList<>(); // Return an empty list when author is not found
+        }
     }
 
-    @PutMapping("/ub{id}")
-    public ResponseEntity<Book> updateAuthor(@PathVariable Long id, @RequestBody Book updatedBook) {
-        Optional<Book> bookOptional = bookRepository.findById(id);
+    @PutMapping("/{authorId}/ub/{bookId}")
+    public ResponseEntity<Book> updateAuthor( @PathVariable Long authorId,
+                                              @PathVariable Long bookId,
+                                              @RequestBody Book updatedBook
+    ) {
+        Optional<Author> authorOptional = authorRepository.findById(authorId);
 
-        if (bookOptional.isPresent()) {
-            Book existingBook = bookOptional.get();
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
 
-            existingBook.setBookName(updatedBook.getBookName());
+            // Find the book within the author's book list by bookId
+            Optional<Book> bookOptional = author.getBookList().stream()
+                    .filter(book -> book.getBookId().equals(bookId))
+                    .findFirst();
 
-            Book savedBook = bookRepository.save(existingBook);
+            if (bookOptional.isPresent()) {
+                Book existingBook = bookOptional.get();
 
-            return ResponseEntity.ok(savedBook);
+                // Update the book name
+                existingBook.setBookName(updatedBook.getBookName());
+
+                // Save the updated book
+                Book savedBook = bookRepository.save(existingBook);
+
+                return ResponseEntity.ok(savedBook);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         } else {
             return ResponseEntity.notFound().build();
         }
