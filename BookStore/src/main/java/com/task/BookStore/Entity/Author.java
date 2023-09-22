@@ -8,7 +8,7 @@ public class Author {
     @Id@GeneratedValue(strategy = GenerationType.SEQUENCE) private Long authorId;
     private String authorName;
 
-    @OneToMany(mappedBy="author")
+    @OneToMany(mappedBy="author", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Book> bookList;
 
     public List<Book> getBookList() {

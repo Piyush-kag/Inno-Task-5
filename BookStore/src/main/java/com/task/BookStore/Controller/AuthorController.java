@@ -1,4 +1,5 @@
 package com.task.BookStore.Controller;
+
 import com.task.BookStore.Entity.Author;
 import com.task.BookStore.Entity.Book;
 import com.task.BookStore.Repository.AuthorRepository;
@@ -16,18 +17,17 @@ import java.util.Optional;
 public class AuthorController {
 
     @Autowired
-    AuthorRepository  authorRepository;
+    AuthorRepository authorRepository;
 //Author
 
     @GetMapping("/")
-   public List<Author> getList()
-    {
+    public List<Author> getList() {
         return authorRepository.findAll();
     }
 
     @PostMapping("/saveAuthor")
-    public Author save(@RequestBody Author author){
-       return authorRepository.save(author);
+    public Author save(@RequestBody Author author) {
+        return authorRepository.save(author);
     }
 
     //Author
@@ -36,25 +36,19 @@ public class AuthorController {
         Optional<Author> author = authorRepository.findById(id);
         return author.get();
     }
-
+//Author delete by id
     @DeleteMapping("/{id}")
-    public String deletById(@PathVariable Long id) {
+    public String deleteById(@PathVariable Long id) {
         Optional<Author> authorOptional = authorRepository.findById(id);
-
-        try {
-            if (authorOptional.isPresent()) {
-                Author author = authorOptional.get();
-                authorRepository.delete(author);
+            if (authorRepository.existsById(id)) {
+                authorRepository.deleteById(id);
                 return "Author deleted successfully";
+            } else {
+                return "Author not found";
             }
-            else {return "Id not Found";}
-        }
-        catch (Exception e){
-            System.out.println(e);
-        }
-        return "Nothing to Delete";
     }
-       @PutMapping("/{id}")
+
+    @PutMapping("/{id}")
     public ResponseEntity<Author> updateAuthor(@PathVariable Long id, @RequestBody Author updatedAuthor) {
         Optional<Author> authorOptional = authorRepository.findById(id);
 
@@ -81,32 +75,29 @@ public class AuthorController {
     }
 
     @GetMapping("/books")
-    public List<Book> getBookById()
-    {
-       return bookRepository.findAll();
+    public List<Book> getBookById() {
+        return bookRepository.findAll();
     }
 
-    //book
-    @DeleteMapping("/db/{id}")
-    public String deleteBookById(@PathVariable Long id ){
-        Optional<Book> bookOptional = bookRepository.findById(id);
-        try {
-            if (bookOptional.isPresent()) {
-                Book book = bookOptional.get();
-                bookRepository.delete(book);
-                return "Book Deleted Successfully";
-            }
-            else {
-                return "Book Id Not Found";
-            }
-        }
-        catch(Exception e){
-            System.out.println(e);
-        }
-        return "Nothing to Delete";
-    }
+//    //book
+//    @DeleteMapping("/db/{id}")
+//    public String deleteBookById(@PathVariable Long id) {
+//        Optional<Book> bookOptional = bookRepository.findById(id);
+//        try {
+//            if (bookOptional.isPresent()) {
+//                Book book = bookOptional.get();
+//                bookRepository.delete(book);
+//                return "Book Deleted Successfully";
+//            } else {
+//                return "Book Id Not Found";
+//            }
+//        } catch (Exception e) {
+//            System.out.println(e);
+//        }
+//        return "Nothing to Delete";
+//    }
 
-    //Book
+    //addBook
     @PostMapping("/{id}/saveBook")
     public ResponseEntity<Object> save(@PathVariable Long id, @RequestBody Book book) {
         Optional<Author> authorOptional = authorRepository.findById(id);
@@ -121,9 +112,10 @@ public class AuthorController {
         }
     }
 
+
+    //all book  of that particular author
     @GetMapping("/{id}/books")
-    public List<Book> getBookList(@PathVariable Long id)
-    {
+    public List<Book> getBookList(@PathVariable Long id) {
         Optional<Author> authorOptional = authorRepository.findById(id);
 
         if (authorOptional.isPresent()) {
@@ -135,10 +127,34 @@ public class AuthorController {
         }
     }
 
-    @PutMapping("/{authorId}/ub/{bookId}")
-    public ResponseEntity<Book> updateAuthor( @PathVariable Long authorId,
-                                              @PathVariable Long bookId,
-                                              @RequestBody Book updatedBook
+    //particular book from particular author
+    @GetMapping("/{authorId}/book/{bookId}")
+    public List<Book> getBookFromAuthor(@PathVariable Long authorId, @PathVariable Long bookId) {
+        Optional<Author> authorOptional = authorRepository.findById(authorId);
+
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
+            Optional<Book> bookOptional = bookRepository.findById(bookId);
+
+            if (bookOptional.isPresent()) {
+                Book book = bookOptional.get();
+
+                // Check if the book belongs to the specified author
+                if (author.getBookList().contains(book)) {
+                    List<Book> books = new ArrayList<>();
+                    books.add(book);
+                    return books;
+                }
+            }
+        }
+        // Return a Empty List if Author and book reltn not found
+        return new ArrayList<>();
+    }
+
+    @PutMapping("/{authorId}/updateBook/{bookId}")
+    public ResponseEntity<Book> updateAuthor(@PathVariable Long authorId,
+                                             @PathVariable Long bookId,
+                                             @RequestBody Book updatedBook
     ) {
         Optional<Author> authorOptional = authorRepository.findById(authorId);
 
@@ -166,5 +182,28 @@ public class AuthorController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    //particular book from particular author
+    @DeleteMapping("/{authorId}/deleteBook/{bookId}")
+    public String deleteBookFromAuthor(@PathVariable Long authorId, @PathVariable Long bookId) {
+        Optional<Author> authorOptional = authorRepository.findById(authorId);
+
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
+            Optional<Book> bookOptional = bookRepository.findById(bookId);
+
+            if (bookOptional.isPresent()) {
+                Book book = bookOptional.get();
+
+                // Check if the book belongs to the specified author
+                if (author.getBookList().contains(book)) {
+                    bookRepository.delete(book);
+                    return "Book Deleted from Author";
+                }
+            }
+        }
+        // Return no reltn found
+        return "No Relation Found in Book and Author";
     }
 }
