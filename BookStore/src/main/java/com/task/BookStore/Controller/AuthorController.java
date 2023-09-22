@@ -18,25 +18,29 @@ public class AuthorController {
 
     @Autowired
     AuthorRepository authorRepository;
-//Author
 
+    //Author
+
+    //Get All authorss
     @GetMapping("/")
     public List<Author> getList() {
         return authorRepository.findAll();
     }
 
+    //Add Author
     @PostMapping("/saveAuthor")
     public Author save(@RequestBody Author author) {
         return authorRepository.save(author);
     }
 
-    //Author
+    //Author by ID
     @GetMapping("/{id}")
     public Author getById(@PathVariable Long id) {
         Optional<Author> author = authorRepository.findById(id);
         return author.get();
     }
-//Author delete by id
+
+    //Author delete by id
     @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
         Optional<Author> authorOptional = authorRepository.findById(id);
@@ -48,6 +52,7 @@ public class AuthorController {
             }
     }
 
+    //Update Author
     @PutMapping("/{id}")
     public ResponseEntity<Author> updateAuthor(@PathVariable Long id, @RequestBody Author updatedAuthor) {
         Optional<Author> authorOptional = authorRepository.findById(id);
@@ -66,7 +71,6 @@ public class AuthorController {
     }
 
     //BOOK
-
     @Autowired
     private BookRepository bookRepository;
 
@@ -74,6 +78,7 @@ public class AuthorController {
         this.bookRepository = bookRepository;
     }
 
+    //get All book
     @GetMapping("/books")
     public List<Book> getBookById() {
         return bookRepository.findAll();
@@ -97,7 +102,7 @@ public class AuthorController {
 //        return "Nothing to Delete";
 //    }
 
-    //addBook
+    //addBook in particular author
     @PostMapping("/{id}/saveBook")
     public ResponseEntity<Object> save(@PathVariable Long id, @RequestBody Book book) {
         Optional<Author> authorOptional = authorRepository.findById(id);
@@ -151,6 +156,7 @@ public class AuthorController {
         return new ArrayList<>();
     }
 
+    //Update Specific book from author
     @PutMapping("/{authorId}/updateBook/{bookId}")
     public ResponseEntity<Book> updateAuthor(@PathVariable Long authorId,
                                              @PathVariable Long bookId,
@@ -168,13 +174,10 @@ public class AuthorController {
 
             if (bookOptional.isPresent()) {
                 Book existingBook = bookOptional.get();
-
                 // Update the book name
                 existingBook.setBookName(updatedBook.getBookName());
-
                 // Save the updated book
                 Book savedBook = bookRepository.save(existingBook);
-
                 return ResponseEntity.ok(savedBook);
             } else {
                 return ResponseEntity.notFound().build();
@@ -195,7 +198,6 @@ public class AuthorController {
 
             if (bookOptional.isPresent()) {
                 Book book = bookOptional.get();
-
                 // Check if the book belongs to the specified author
                 if (author.getBookList().contains(book)) {
                     bookRepository.delete(book);
@@ -203,7 +205,7 @@ public class AuthorController {
                 }
             }
         }
-        // Return no reltn found
+        // Return no relation found
         return "No Relation Found in Book and Author";
     }
 }
