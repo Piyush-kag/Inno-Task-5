@@ -4,8 +4,10 @@ import com.task.BookStore.Entity.Author;
 import com.task.BookStore.Entity.Book;
 import com.task.BookStore.Repository.AuthorRepository;
 import com.task.BookStore.Repository.BookRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,57 +15,76 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000/")
 @RequestMapping("/author")
 public class AuthorController {
 
     @Autowired
     AuthorRepository authorRepository;
+    @Autowired
+    private BookRepository bookRepository;
+    public void BookController(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
 
     //Author
 
     //Get All authorss
     @GetMapping("/")
     public List<Author> getList() {
+
         return authorRepository.findAll();
     }
 
     //Add Author
-    @PostMapping("/saveAuthor")
-    public Author save(@RequestBody Author author) {
-        return authorRepository.save(author);
+    @PostMapping("/")
+    @Validated
+    public ResponseEntity<Author> saveAuthorName(@Valid @RequestBody String authorName) {
+        Author newAuthor = new Author();
+        newAuthor.setAuthorName(authorName);
+
+        Author savedAuthor = authorRepository.save(newAuthor);
+        return ResponseEntity.ok(savedAuthor);
     }
 
     //Author by ID
     @GetMapping("/{id}")
-    public Author getById(@PathVariable Long id) {
-        Optional<Author> author = authorRepository.findById(id);
-        return author.get();
+    public ResponseEntity<Author> getById(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Optional<Author> authorOptional = authorRepository.findById(id);
+        if (authorOptional.isPresent()) {
+            Author author = authorOptional.get();
+            return ResponseEntity.ok(author);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     //Author delete by id
     @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
-        Optional<Author> authorOptional = authorRepository.findById(id);
-            if (authorRepository.existsById(id)) {
-                authorRepository.deleteById(id);
-                return "Author deleted successfully";
-            } else {
-                return "Author not found";
-            }
+        if (authorRepository.existsById(id)) {
+            authorRepository.deleteById(id);
+            return "Author deleted successfully";
+        }
+        return "Author not found";
     }
 
     //Update Author
     @PutMapping("/{id}")
     public ResponseEntity<Author> updateAuthor(@PathVariable Long id, @RequestBody Author updatedAuthor) {
-        Optional<Author> authorOptional = authorRepository.findById(id);
-
-        if (authorOptional.isPresent()) {
-            Author existingAuthor = authorOptional.get();
-
+        System.out.println("Author ID" + id);
+        System.out.println("Author Name" + updatedAuthor);
+        if (id == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Optional<Author> existingAuthorOptional = authorRepository.findById(id);
+        if (existingAuthorOptional.isPresent()) {
+            Author existingAuthor = existingAuthorOptional.get();
             existingAuthor.setAuthorName(updatedAuthor.getAuthorName());
-            // Save the updated entity
             Author savedAuthor = authorRepository.save(existingAuthor);
-
             return ResponseEntity.ok(savedAuthor);
         } else {
             return ResponseEntity.notFound().build();
@@ -71,12 +92,6 @@ public class AuthorController {
     }
 
     //BOOK
-    @Autowired
-    private BookRepository bookRepository;
-
-    public void BookController(BookRepository bookRepository) {
-        this.bookRepository = bookRepository;
-    }
 
     //get All book
     @GetMapping("/books")
@@ -84,128 +99,81 @@ public class AuthorController {
         return bookRepository.findAll();
     }
 
-//    //book
-//    @DeleteMapping("/db/{id}")
-//    public String deleteBookById(@PathVariable Long id) {
-//        Optional<Book> bookOptional = bookRepository.findById(id);
-//        try {
-//            if (bookOptional.isPresent()) {
-//                Book book = bookOptional.get();
-//                bookRepository.delete(book);
-//                return "Book Deleted Successfully";
-//            } else {
-//                return "Book Id Not Found";
-//            }
-//        } catch (Exception e) {
-//            System.out.println(e);
-//        }
-//        return "Nothing to Delete";
-//    }
 
-    //addBook in particular author
-    @PostMapping("/{id}/saveBook")
-    public ResponseEntity<Object> save(@PathVariable Long id, @RequestBody Book book) {
+    //add book
+    @PostMapping("{id}/books")
+    public ResponseEntity<Author> save(@PathVariable Long id, @RequestBody Book book) {
         Optional<Author> authorOptional = authorRepository.findById(id);
 
         if (authorOptional.isPresent()) {
             Author author = authorOptional.get();
             book.setAuthor(author);
             bookRepository.save(book);
-            return ResponseEntity.ok("Book saved for author with ID " + id);
+            return ResponseEntity.ok(author); // Return the updated author
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
-
-    //all book  of that particular author
     @GetMapping("/{id}/books")
-    public List<Book> getBookList(@PathVariable Long id) {
+    public ResponseEntity<List<Book>> getBookList(@PathVariable Long id) {
         Optional<Author> authorOptional = authorRepository.findById(id);
 
         if (authorOptional.isPresent()) {
             Author author = authorOptional.get();
-            List<Book> books = author.getBookList();
-            return books;
-        } else {
-            return new ArrayList<>(); // Return an empty list when author is not found
-        }
-    }
-
-    //particular book from particular author
-    @GetMapping("/{authorId}/book/{bookId}")
-    public List<Book> getBookFromAuthor(@PathVariable Long authorId, @PathVariable Long bookId) {
-        Optional<Author> authorOptional = authorRepository.findById(authorId);
-
-        if (authorOptional.isPresent()) {
-            Author author = authorOptional.get();
-            Optional<Book> bookOptional = bookRepository.findById(bookId);
-
-            if (bookOptional.isPresent()) {
-                Book book = bookOptional.get();
-
-                // Check if the book belongs to the specified author
-                if (author.getBookList().contains(book)) {
-                    List<Book> books = new ArrayList<>();
-                    books.add(book);
-                    return books;
-                }
-            }
-        }
-        // Return a Empty List if Author and book reltn not found
-        return new ArrayList<>();
-    }
-
-    //Update Specific book from author
-    @PutMapping("/{authorId}/updateBook/{bookId}")
-    public ResponseEntity<Book> updateAuthor(@PathVariable Long authorId,
-                                             @PathVariable Long bookId,
-                                             @RequestBody Book updatedBook
-    ) {
-        Optional<Author> authorOptional = authorRepository.findById(authorId);
-
-        if (authorOptional.isPresent()) {
-            Author author = authorOptional.get();
-
-            // Find the book within the author's book list by bookId
-            Optional<Book> bookOptional = author.getBookList().stream()
-                    .filter(book -> book.getBookId().equals(bookId))
-                    .findFirst();
-
-            if (bookOptional.isPresent()) {
-                Book existingBook = bookOptional.get();
-                // Update the book name
-                existingBook.setBookName(updatedBook.getBookName());
-                // Save the updated book
-                Book savedBook = bookRepository.save(existingBook);
-                return ResponseEntity.ok(savedBook);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            return ResponseEntity.ok(author.getBookList());
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     //particular book from particular author
-    @DeleteMapping("/{authorId}/deleteBook/{bookId}")
-    public String deleteBookFromAuthor(@PathVariable Long authorId, @PathVariable Long bookId) {
+    @GetMapping("/{authorId}/books/{bookId}")
+    public ResponseEntity<List<Book>> getBookFromAuthor(@PathVariable Long authorId, @PathVariable Long bookId) {
         Optional<Author> authorOptional = authorRepository.findById(authorId);
-
-        if (authorOptional.isPresent()) {
+        Optional<Book> bookOptional = bookRepository.findById(bookId);
+        if (authorOptional.isPresent() && bookOptional.isPresent()) {
             Author author = authorOptional.get();
-            Optional<Book> bookOptional = bookRepository.findById(bookId);
-
-            if (bookOptional.isPresent()) {
-                Book book = bookOptional.get();
-                // Check if the book belongs to the specified author
-                if (author.getBookList().contains(book)) {
-                    bookRepository.delete(book);
-                    return "Book Deleted from Author";
-                }
+            Book book = bookOptional.get();
+            // Check if the book belongs to the specified author
+            if (author.getBookList().contains(book)) {
+                List<Book> books = new ArrayList<>();
+                books.add(book);
+                return ResponseEntity.ok(books);
             }
         }
-        // Return no relation found
-        return "No Relation Found in Book and Author";
+        // Return an empty list if the author or book relationship is not found
+        return ResponseEntity.notFound().build();
     }
+
+    @PutMapping("/books/{bookId}")
+    public ResponseEntity<Book> updateBook(@PathVariable Long bookId, @RequestBody Book updatedBook) {
+        System.out.println("Book:" +bookId +"BookName:" +updatedBook);
+        Optional<Book> bookOptional = bookRepository.findById(bookId);
+
+        if (bookOptional.isPresent()) {
+            Book existingBook = bookOptional.get();
+            existingBook.setBookName(updatedBook.getBookName());
+                Book savedBook = bookRepository.save(existingBook);
+            return ResponseEntity.ok(savedBook);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    //delete book from its ID
+    @DeleteMapping("/books/{bookId}")
+    public ResponseEntity<String> deleteBook(@PathVariable Long bookId) {
+        System.out.println(bookId);
+        Optional<Book> bookOptional = bookRepository.findById(bookId);
+
+        if (bookOptional.isPresent()) {
+            Book book = bookOptional.get();
+            // Delete the book
+            bookRepository.delete(book);
+            return ResponseEntity.ok("Book Deleted");
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
 }
