@@ -17,8 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class User implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     private String email;
     private String password;
     private Role role;
@@ -30,7 +29,7 @@ public class User implements UserDetails {
 
     @Override
     public String getPassword() {
-        return null;
+        return password;
     }
 
     @Override

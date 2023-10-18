@@ -12,23 +12,24 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 @ComponentScan(basePackages = "com.task.BookStore")
-public class BookStoreApplication implements CommandLineRunner {
+public class BookStoreApplication implements CommandLineRunner{
+
 	@Autowired
 	private UserRepository userRepository;
-
 	public static void main(String[] args) {
 		SpringApplication.run(BookStoreApplication.class, args);
 		System.out.println("Running Successfully");
 	}
-	public void run(String... args){
-		User adminAccount = userRepository.findByRole(Role.ADMIN);
-		if(null == adminAccount){
-			User user=new User();
-			user.setEmail("admin@gmail.com");
-			user.setRole(Role.ADMIN);
-			user.setPassword(new BCryptPasswordEncoder().encode("abc"));
-			userRepository.save(user);
-		}
-	}
 
+	@Override
+	public void run(String... args) throws Exception {
+	User adminAccount = userRepository.findByRole(Role.ADMIN);
+	if(null==adminAccount){
+		User user = new User();
+		user.setEmail("admin@gmail.com");
+		user.setRole(Role.ADMIN);
+		user.setPassword(new BCryptPasswordEncoder().encode("abc"));
+		userRepository.save(user);
+	}
+	}
 }

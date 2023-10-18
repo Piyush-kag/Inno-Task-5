@@ -2,6 +2,8 @@ package com.task.BookStore.Controller;
 
 import com.task.BookStore.Entity.Book;
 import com.task.BookStore.Entity.User;
+import com.task.BookStore.dto.JwtAuthenticationResponse;
+import com.task.BookStore.dto.SignInRequest;
 import com.task.BookStore.dto.SignUpRequest;
 import com.task.BookStore.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +22,10 @@ public class AuthenticationController {
     @PostMapping("/signup")
     public ResponseEntity<User> signup(@RequestBody SignUpRequest signUpRequest){
 return ResponseEntity.ok(authenticationService.signup(signUpRequest));
+    }
+
+    @PostMapping("/signin")
+    public ResponseEntity<JwtAuthenticationResponse> signin(@RequestBody SignInRequest signInRequest){
+        return ResponseEntity.ok(authenticationService.signin(signInRequest));
     }
 }
